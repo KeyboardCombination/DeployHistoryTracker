@@ -5,66 +5,55 @@ import savepagenow
 import threading
 from datetime import datetime
 
-binaryType = [
+BinaryTypes = [
     "WindowsPlayer",
     "WindowsStudio",
     #"MacPlayer",
-    #"MacStudio"
+    #"MacStudio" TODO: Mac client support
 ]
 
-deployServer = [
-    "",
-    ""
-#    "mac/",
-#    "mac/"
-]
+AttemptIncrement = 0
+FailIncrementrement = 0
 
 token = open("tokenclientsearch.txt", "r").read()
-windows = discord.SyncWebhook.from_url(token)
+Webhook = discord.SyncWebhook.from_url(token)
 
-windows.send(f'Started!')  
+Webhook.send(f'Started!')  
+
+def handleWaybackException(exception):
+    open("log.txt", "a").write(str(exception) + "\n")
+    print("exception!")
+    AttemptIncrement = AttemptIncrement + 1
+    print(AttemptIncrement)
+    time.sleep(15 * AttemptIncrement)
+
 def archiveURLS(pkgManifest):
-    failinc = 0
+    FailIncrement = 0
     for v in pkgManifest:
-        tryinc = 0
+        AttemptIncrement = 0
         
         while True:
-            if (tryinc > 16):
+            if (AttemptIncrement > 16):
                 print("wayback doesn't like us!")
-                failinc = failinc + 1
+                FailIncrement = FailIncrement + 1
                 break
             try:
-                versionFile = requests.get(f"https://setup.rbxcdn.com/{version}-{v}")
+                #versionFile = requests.get(f"https://setup.rbxcdn.com/{version}-{v}")
                 #if versionFile.status_code < 400:
                 #    open(f"out/{version}-{v}", "wb").write(versionFile.content)
-                archive_url, captured = savepagenow.capture_or_cache(f"https://setup.rbxcdn.com/{version}-{v}")
-                print(archive_url)
+                ArchiveUrl = savepagenow.capture_or_cache(f"https://setup.rbxcdn.com/{version}-{v}")
+                print(ArchiveUrl)
+                open("log.txt", "a").write(f"Attempting to capture {ArchiveUrl}...\n")
                 break
-            except savepagenow.exceptions.WaybackRuntimeError as e:
-                open("log.txt", "a").write(str(e) + "\n")
-                print("exception!")
-                tryinc = tryinc + 1
-                print(tryinc)
-                time.sleep(15)
-            except requests.exceptions.RequestException as e:
-                open("log.txt", "a").write(str(e) + "\n")
-                print("exception!")
-                tryinc = tryinc + 1
-                print(tryinc)
-                time.sleep(15)
-            except requests.exceptions.TooManyRequests as e:
-                open("log.txt", "a").write(str(e) + "\n")
-                print("exception!")
-                tryinc = tryinc + 1
-                print(tryinc)
-                time.sleep(15)
+            except Exception as exception:
+                handleWaybackException(exception)
     
-    windows.send(f'Done crawling to web.archive.org! Failed Archives: {failinc}')    
+    Webhook.send(f'Done crawling to web.archive.org! Failed Archives: {FailIncrement}')    
 
 while True:
     for i in range(0, 2):#4):
         print(f"Trying {i}")
-        CurrentType = binaryType[i]
+        CurrentBinaryType = BinaryTypes[i]
         
         requestsincone = 0
         while True:
@@ -72,7 +61,7 @@ while True:
                 print("roblox doesn't like us!")
                 break
             try:
-                fetch = requests.get(f"https://clientsettings.roblox.com/v2/client-version/{CurrentType}")
+                fetch = requests.get(f"https://clientsettings.roblox.com/v2/client-version/{CurrentBinaryType}")
                 break
             except requests.exceptions.RequestException as e:
                 open("log.txt", "a").write(str(e) + "\n")
@@ -81,23 +70,23 @@ while True:
                 print(requestsincone)
                 time.sleep(15)
 
-        cachedDeploy = open(f"{CurrentType}.txt", "r").read()
+        cachedDeploy = open(f"{CurrentBinaryType}.txt", "r").read()
         
         print(cachedDeploy)
         version = fetch.json().get("clientVersionUpload", '')
         
         if (cachedDeploy != version):
-            embedder = discord.Embed(title="New Roblox Deploy!", description = version)
+            NewDeployEmbed = discord.Embed(title="New Roblox Deploy!", description = version)
 
             
-            embedder.add_field(name = f'Log Time', value = datetime.now().strftime("%x %X"), inline = False)
-            embedder.add_field(name = f'binaryType', value = CurrentType, inline = False)
+            NewDeployEmbed.add_field(name = f'Log Time', value = datetime.now().strftime("%x %X"), inline = False)
+            NewDeployEmbed.add_field(name = f'binaryType', value = CurrentBinaryType, inline = False)
 
-            embedder.set_image(url="https://cdn.discordapp.com/attachments/986993599742873650/1103331826489114745/deployhistoryupdate.gif")
+            NewDeployEmbed.set_image(url="https://cdn.discordapp.com/attachments/986993599742873650/1103331826489114745/deployhistoryupdate.gif")
             
-            windows.send(embed=embedder)
+            Webhook.send(embed = NewDeployEmbed)
             print("NEWDEPLOY!!!")
-            open(f"{CurrentType}.txt", "w").write(version)
+            open(f"{CurrentBinaryType}.txt", "w").write(version)
                     
             requestsinctwo = 0
             while True:
@@ -123,7 +112,7 @@ while True:
                     fileListEmbed.add_field(name = v, value = f"https://setup.rbxcdn.com/{version}-{v}", inline = False)
             fileListEmbed.set_image(url="https://cdn.discordapp.com/attachments/976287740771598379/1105135729744543776/clientsearch_folder2.png")
             
-            windows.send(embed=fileListEmbed)
+            Webhook.send(embed=fileListEmbed)
             x = threading.Thread(target=archiveURLS, args=(pkgManifest,))
             x.start()
     time.sleep(600)
