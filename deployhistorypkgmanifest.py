@@ -12,6 +12,9 @@ BinaryTypes = [
     #"MacStudio" TODO: Mac client support
 ]
 
+for i in BinaryTypes:
+    open(i+".txt", "a+")
+
 token = open("/home/red/tokenclientsearch.txt", "r").read()
 Webhook = discord.SyncWebhook.from_url(token)
 
@@ -20,7 +23,7 @@ Webhook.send(f'Started!')
 def retry(func, retries=10, sleep_seconds=5):
     for i in range(retries):
         try:
-            return func()
+            return func
         except Exception as e:
             print(f"Error: {e}")
             if i < retries - 1:
@@ -42,28 +45,26 @@ def WorkerThread():
 
 def archiveURLS(pkgManifest):
     for v in pkgManifest:
-        retry(lambda: (
-            ArchiveUrl = savepagenow.capture_or_cache(f"https://setup.rbxcdn.com/{version}-{v}"),
-            print(ArchiveUrl),
-            open("log.txt", "a").write(f"Attempting to capture {ArchiveUrl}...\n")
-            )
-        )
-    Webhook.send(f'Done crawling to web.archive.org! Failed Archives: {FailIncrement}')    
+        print(v)
+        retry(SaveClientNow(version, v))
+    Webhook.send(f'Done crawling to web.archive.org! Failed Archives: {FailIncrement}')
+
+def SaveClientNow(version, v):
+    ArchiveUrl = savepagenow.capture_or_cache(f"https://setup.rbxcdn.com/{version}-{v}")
+    print(ArchiveUrl)
+    open("log.txt", "a").write(f"Attempting to capture {ArchiveUrl}...\n")
+
+def GetCurrentHash(CurrentBinaryType):
+    return requests.get(f"https://clientsettings.roblox.com/v2/client-version/{CurrentBinaryType}")
+
+def GetPkgManifest():
+    return requests.get(f"https://s3.amazonaws.com/setup.roblox.com/{version}-rbxPkgManifest.txt")
 
 while True:
-    for i in range(0, 2):):
-        print(f"Trying {i}")
-        CurrentBinaryType = BinaryTypes[i]
-        
-        fetch = ""
-        retry(lambda: (
-            fetch = requests.get(f"https://clientsettings.roblox.com/v2/client-version/{CurrentBinaryType}")
-            )
-        )
-
+    for CurrentBinaryType in BinaryTypes:
+        fetch = retry(GetCurrentHash(CurrentBinaryType))
         cachedDeploy = open(f"{CurrentBinaryType}.txt", "r").read()
         version = fetch.json().get("clientVersionUpload", '')
-        fetch = ""
         
         if (cachedDeploy != version):
             NewDeployEmbed = discord.Embed(title="New Roblox Deploy!", description = version)
@@ -75,11 +76,7 @@ while True:
             print("NEWDEPLOY!!!")
             open(f"{CurrentBinaryType}.txt", "w").write(version)
 
-            rbxPkgManifest = ""
-            retry(lambda: (
-                    rbxPkgManifest = requests.get(f"https://s3.amazonaws.com/setup.roblox.com/{version}-rbxPkgManifest.txt")
-                )
-            )
+            rbxPkgManifest = retry(GetPkgManifest())
             
             fileListEmbed = discord.Embed(title=f"{version} File List:", description = f"From https://setup.rbxcdn.com/{version}-rbxPkgManifest.txt")
             pkgManifest = []
@@ -89,7 +86,6 @@ while True:
                     fileListEmbed.add_field(name = v, value = f"https://setup.rbxcdn.com/{version}-{v}", inline = False)
             fileListEmbed.set_image(url="https://cdn.discordapp.com/attachments/976287740771598379/1105135729744543776/clientsearch_folder2.png")
             Webhook.send(embed=fileListEmbed)
-            rbxPkgManifest = ""
 
             with Queuelock:
                 ClientArchiveQueue.append((pkgManifest))
