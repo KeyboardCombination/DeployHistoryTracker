@@ -43,8 +43,8 @@ def archiveURLS(curVerArgs):
         print(currentClientUrl)
         for i in range(16):
             try:
-                SaveClientNow(curVersion, v)
                 time.sleep(8)
+                SaveClientNow(curVersion, v)
                 break
             except Exception as e:
                 print(f"Error: {e}")
