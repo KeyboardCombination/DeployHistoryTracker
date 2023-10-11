@@ -67,6 +67,7 @@ def archiveURLS(curVerArgs):
     for i in range(16):
         try:
             ArchiveUrl = savepagenow.capture_or_cache(f"https://setup.rbxcdn.com/DeployHistory.txt")
+            break
         except Exception as e:
             time.sleep(60)
             if i == 15:
