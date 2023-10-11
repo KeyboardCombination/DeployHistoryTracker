@@ -34,30 +34,44 @@ def WorkerThread():
             archiveURLS(latest)
 
 def archiveURLS(curVerArgs):
+    time.sleep(20)
     pkgManifest, curVersion = curVerArgs
     currentFailedFiles = []
     for v in pkgManifest:
+        time.sleep(20)
         currentClientUrl = f"https://setup.rbxcdn.com/{curVersion}-{v}"
         print(currentClientUrl)
-        for i in range(8):
+        for i in range(16):
             try:
                 SaveClientNow(curVersion, v)
+                time.sleep(8)
                 break
             except Exception as e:
                 print(f"Error: {e}")
                 open("log.txt", "a").write(f"{e}")
-                time.sleep(8)
+                time.sleep(60)
                 if i == 7:
                     try:
                         currentFailedFiles.index(currentClientUrl)
                     except Exception as h:
                         currentFailedFiles.append(currentClientUrl)
-                        time.sleep(1)
+                        time.sleep(4)
 
     FailedArchiveEmbed = discord.Embed(title=f"Done! Failed Archives: {len(currentFailedFiles)}", description = curVersion)
     for i in currentFailedFiles:
         FailedArchiveEmbed.add_field(name = "", value = i, inline = False)
     Webhook.send(embed=FailedArchiveEmbed)
+    time.sleep(20)
+    for i in range(16):
+        try:
+            ArchiveUrl = savepagenow.capture_or_cache(f"https://setup.rbxcdn.com/DeployHistory.txt")
+        except Exception as e:
+            if i == 15:
+                DeployHistoryTxtArchive = discord.Embed(title="Attempted Archive Of Deployhistory.txt...", description = "Failed!")
+                DeployHistoryTxtArchive.set_image(url="https://cdn.discordapp.com/attachments/976287740771598379/1161763241454735480/billc.png")
+    DeployHistoryTxtArchive = discord.Embed(title="Attempted Archive Of Deployhistory.txt...", description = "Success!")
+    DeployHistoryTxtArchive.set_image(url="https://cdn.discordapp.com/attachments/976287740771598379/1161764162284830820/rfold.png")
+    Webhook.send(embed=DeployHistoryTxtArchive)
 
 def SaveClientNow(curVersion, v):
     ArchiveUrl = savepagenow.capture_or_cache(f"https://setup.rbxcdn.com/{curVersion}-{v}")
@@ -75,7 +89,7 @@ x.start()
 
 while True:
     for CurrentBinaryType in BinaryTypes:
-        for i in range(8):
+        for i in range(16):
             try:
                 fetch = GetCurrentHash(CurrentBinaryType)
                 break
@@ -91,13 +105,13 @@ while True:
             NewDeployEmbed = discord.Embed(title="New Roblox Deploy!", description = version)
             NewDeployEmbed.add_field(name = f'Log Time', value = datetime.now().strftime("%x %X"), inline = False)
             NewDeployEmbed.add_field(name = f'binaryType', value = CurrentBinaryType, inline = False)
-            NewDeployEmbed.set_image(url="https://media.discordapp.net/attachments/1121901772961763421/1157753486063173713/deploy.gif")
+            NewDeployEmbed.set_image(url="https://cdn.discordapp.net/attachments/1121901772961763421/1157753486063173713/deploy.gif")
             Webhook.send(embed = NewDeployEmbed)
 
             print("NEWDEPLOY!!!")
             open(f"{CurrentBinaryType}.txt", "w").write(version)
 
-            for i in range(8):
+            for i in range(16):
                 try:
                     rbxPkgManifest = GetPkgManifest(version)
                     break
@@ -113,11 +127,9 @@ while True:
                 if v.find(".") != -1:
                     pkgManifest.append(v)
                     fileListEmbed.add_field(name = v, value = f"https://setup.rbxcdn.com/{version}-{v}", inline = False)
-            fileListEmbed.set_image(url="https://media.discordapp.com/attachments/976287740771598379/1105135729744543776/clientsearch_folder2.png")
+            fileListEmbed.set_image(url="https://cdn.discordapp.com/attachments/976287740771598379/1105135729744543776/clientsearch_folder2.png")
             Webhook.send(embed=fileListEmbed)
             pkgManifest.append("rbxManifest.txt")
-            if CurrentBinaryType == BinaryTypes[0]:
-                pkgManifest.append("RobloxPlayerLauncher.exe")
             if CurrentBinaryType == BinaryTypes[1]:
                 pkgManifest.append("RobloxStudioLauncherBeta.exe")
 
