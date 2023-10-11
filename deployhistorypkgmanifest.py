@@ -48,7 +48,7 @@ def archiveURLS(curVerArgs):
                 break
             except Exception as e:
                 print(f"Error: {e}")
-                open("log.txt", "a").write(f"{e}")
+                open("log.txt", "a").write(f"{e}\n")
                 time.sleep(60)
                 if i == 7:
                     try:
@@ -95,7 +95,7 @@ while True:
                 break
             except Exception as e:
                 print(f"Error: {e}")
-                open("log.txt", "a").write(f"{e}")
+                open("log.txt", "a").write(f"{e}\n")
                 time.sleep(8)
 
         cachedDeploy = open(f"{CurrentBinaryType}.txt", "r").read()
@@ -117,7 +117,7 @@ while True:
                     break
                 except Exception as e:
                     print(f"Error: {e}")
-                    open("log.txt", "a").write(f"{e}")
+                    open("log.txt", "a").write(f"{e}\n")
                     time.sleep(8)
 
             fileListEmbed = discord.Embed(title=f"{version} File List:", description = f"From https://setup.rbxcdn.com/{version}-rbxPkgManifest.txt")
