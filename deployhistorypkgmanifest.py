@@ -61,16 +61,21 @@ def archiveURLS(curVerArgs):
     for i in currentFailedFiles:
         FailedArchiveEmbed.add_field(name = "", value = i, inline = False)
     Webhook.send(embed=FailedArchiveEmbed)
+
+    DeployHistoryFailFlag = False
     time.sleep(20)
     for i in range(16):
         try:
             ArchiveUrl = savepagenow.capture_or_cache(f"https://setup.rbxcdn.com/DeployHistory.txt")
         except Exception as e:
+            time.sleep(60)
             if i == 15:
                 DeployHistoryTxtArchive = discord.Embed(title="Attempted Archive Of Deployhistory.txt...", description = "Failed!")
                 DeployHistoryTxtArchive.set_image(url="https://cdn.discordapp.com/attachments/976287740771598379/1161763241454735480/billc.png")
-    DeployHistoryTxtArchive = discord.Embed(title="Attempted Archive Of Deployhistory.txt...", description = "Success!")
-    DeployHistoryTxtArchive.set_image(url="https://cdn.discordapp.com/attachments/976287740771598379/1161764162284830820/rfold.png")
+                DeployHistoryFailFlag = True
+    if not DeployHistoryFailFlag:
+        DeployHistoryTxtArchive = discord.Embed(title="Attempted Archive Of Deployhistory.txt...", description = "Succeeded!")
+        DeployHistoryTxtArchive.set_image(url="https://cdn.discordapp.com/attachments/976287740771598379/1161764162284830820/rfold.png")
     Webhook.send(embed=DeployHistoryTxtArchive)
 
 def SaveClientNow(curVersion, v):
