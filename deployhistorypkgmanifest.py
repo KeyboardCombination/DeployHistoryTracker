@@ -7,7 +7,7 @@ from datetime import datetime
 
 BinaryTypes = [
     "WindowsPlayer",
-    "WindowsStudio",
+    "WindowsStudio64",
     #"MacPlayer",
     #"MacStudio" TODO: Mac client support
 ]
