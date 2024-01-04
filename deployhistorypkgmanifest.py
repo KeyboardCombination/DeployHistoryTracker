@@ -49,6 +49,7 @@ def urlTest(curVerArgs):
     pkgManifest, curVersion, versionHashStatic, fileListEmbed = curVerArgs
     currentFailedFiles = []
     currentSuccessFiles = []
+    currentSuccessFileNames = []
     for v in pkgManifest:
         print("-------------STARTING HEAD TEST-------------")
         currentClientUrl = f"https://setup.rbxcdn.com/{curVersion}-{v}"
@@ -60,7 +61,7 @@ def urlTest(curVerArgs):
             currentFailedFiles.append(currentClientUrl)
         elif  StatusCheck.status_code == 200:
             currentSuccessFiles.append(currentClientUrl)
-
+            currentSuccessFileNames.append(v)
     clientListString = bytes("\n".join(currentSuccessFiles), encoding='utf8')
     ClientFileList = discord.File(io.BytesIO(clientListString), filename=f"{versionHashStatic}-ClientFiles.txt")
 
@@ -68,7 +69,7 @@ def urlTest(curVerArgs):
     Webhook.send(file=ClientFileList)
 
     if not DEBUG_MODE:
-        archiveURLS((currentSuccessFiles, curVersion, versionHashStatic))
+        archiveURLS((currentSuccessFileNames, curVersion, versionHashStatic))
 
 
 def archiveURLS(curVerArgs):
@@ -79,7 +80,7 @@ def archiveURLS(curVerArgs):
     for v in pkgManifest:
         time.sleep(20)
         currentClientUrl = f"https://setup.rbxcdn.com/{curVersion}-{v}"
-        print(currentClientUrl)
+        print(f"Archiving: {currentClientUrl}")
         for i in range(16):
             try:
                 time.sleep(8)
@@ -138,7 +139,7 @@ def archiveURLS(curVerArgs):
 
 def SaveClientNow(curVersion, v):
     ArchiveUrl = savepagenow.capture_or_cache(f"https://setup.rbxcdn.com/{curVersion}-{v}")
-    print(ArchiveUrl)
+    print(f"Returned URL: {ArchiveUrl}")
     open("log.txt", "a").write(f"Attempting to capture {ArchiveUrl[0]}...\n")
     return ArchiveUrl[0]
 
