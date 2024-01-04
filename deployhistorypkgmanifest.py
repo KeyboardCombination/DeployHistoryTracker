@@ -132,10 +132,10 @@ def archiveURLS(curVerArgs):
     if not DeployHistoryFailFlag:
         DeployHistoryTxtArchive = discord.Embed(title="Attempted Archive Of https://setup.rbxcdn.com/DeployHistory.txt", description = "Succeeded!")
         DeployHistoryTxtArchive.set_image(url="https://cdn.discordapp.com/attachments/976287740771598379/1161764162284830820/rfold.png")
-        DeployHistoryInMemory = requests.get(f"http://setup.rbxcdn.com/{DeployText}")
+    Webhook.send(embed=DeployHistoryTxtArchive)
+    if not DeployHistoryFailFlag:        DeployHistoryInMemory = requests.get(f"http://setup.rbxcdn.com/{DeployText}")
         DeployHistoryMemAsFile = discord.File(io.BytesIO(DeployHistoryInMemory.content), filename="DeployHistory.txt")
         Webhook.send(file=DeployHistoryMemAsFile)
-    Webhook.send(embed=DeployHistoryTxtArchive)
 
 def SaveClientNow(curVersion, v):
     ArchiveUrl = savepagenow.capture_or_cache(f"https://setup.rbxcdn.com/{curVersion}-{v}")
