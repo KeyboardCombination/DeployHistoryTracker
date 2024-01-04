@@ -6,7 +6,7 @@ import threading
 import io
 from datetime import datetime
 
-DEBUG_MODE = True
+DEBUG_MODE = False
 
 BinaryTypes = [
     "WindowsPlayer",
@@ -75,6 +75,7 @@ def archiveURLS(curVerArgs):
     time.sleep(20)
     pkgManifest, curVersion, versionHashStatic = curVerArgs
     currentFailedFiles = []
+    currentSuccessFiles = []
     for v in pkgManifest:
         time.sleep(20)
         currentClientUrl = f"https://setup.rbxcdn.com/{curVersion}-{v}"
@@ -82,7 +83,8 @@ def archiveURLS(curVerArgs):
         for i in range(16):
             try:
                 time.sleep(8)
-                SaveClientNow(curVersion, v)
+                Succeeded = SaveClientNow(curVersion, v)
+                currentSuccessFiles.append(Succeeded)
                 break
             except Exception as e:
                 print(f"Error: {e}")
@@ -95,32 +97,50 @@ def archiveURLS(curVerArgs):
                         currentFailedFiles.append(currentClientUrl)
                         time.sleep(4)
 
+
+
     FailedArchiveEmbed = discord.Embed(title=f"Done! Failed Archives: {len(currentFailedFiles)}", description = versionHashStatic)
     for i in currentFailedFiles:
         FailedArchiveEmbed.add_field(name = "", value = i, inline = False)
     Webhook.send(embed=FailedArchiveEmbed)
 
+    SuccessArchivedFileList = discord.Embed(title=f"{versionHashStatic} Archived List:", description = f"Links returned by SavePageNow")
+
+    clientSuccessListString = bytes("\n".join(currentSuccessFiles), encoding='utf8')
+    ClientSuccessFileList = discord.File(io.BytesIO(clientSuccessListString), filename=f"{versionHashStatic}-ClientFiles.txt")
+
+    Webhook.send(embed=SuccessArchivedFileList)
+    Webhook.send(file=ClientSuccessFileList)
+
     DeployHistoryFailFlag = False
+    if curVersion.startswith("mac"):
+        DeployText = "mac/DeployHistory.txt"
+    else:
+        DeployText = "DeployHistory.txt"
     time.sleep(20)
     for i in range(16):
         try:
-            ArchiveUrl = savepagenow.capture_or_cache(f"https://setup.rbxcdn.com/DeployHistory.txt")
+            ArchiveUrl = savepagenow.capture_or_cache(f"https://setup.rbxcdn.com/{DeployText}")
             break
         except Exception as e:
             time.sleep(60)
             if i == 15:
                 DeployHistoryTxtArchive = discord.Embed(title="Attempted Archive Of https://setup.rbxcdn.com/DeployHistory.txt", description = "Failed!")
-                DeployHistoryTxtArchive.set_image(url="https://media.discordapp.com/attachments/976287740771598379/1161763241454735480/billc.png")
+                DeployHistoryTxtArchive.set_image(url="https://cdn.discordapp.com/attachments/976287740771598379/1161763241454735480/billc.png")
                 DeployHistoryFailFlag = True
     if not DeployHistoryFailFlag:
         DeployHistoryTxtArchive = discord.Embed(title="Attempted Archive Of https://setup.rbxcdn.com/DeployHistory.txt", description = "Succeeded!")
         DeployHistoryTxtArchive.set_image(url="https://cdn.discordapp.com/attachments/976287740771598379/1161764162284830820/rfold.png")
+        DeployHistoryInMemory = requests.get(f"http://setup.rbxcdn.com/{DeployText}")
+        DeployHistoryMemAsFile = discord.File(io.BytesIO(DeployHistoryInMemory.content), filename="DeployHistory.txt")
+        Webhook.send(file=DeployHistoryMemAsFile)
     Webhook.send(embed=DeployHistoryTxtArchive)
 
 def SaveClientNow(curVersion, v):
     ArchiveUrl = savepagenow.capture_or_cache(f"https://setup.rbxcdn.com/{curVersion}-{v}")
     print(ArchiveUrl)
     open("log.txt", "a").write(f"Attempting to capture {ArchiveUrl[0]}...\n")
+    return ArchiveUrl[0]
 
 def GetCurrentHash(CurrentBinaryType):
     return requests.get(f"https://clientsettings.roblox.com/v2/client-version/{CurrentBinaryType}")
