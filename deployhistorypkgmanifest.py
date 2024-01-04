@@ -5,11 +5,19 @@ import savepagenow
 import threading
 from datetime import datetime
 
+DEBUG_MODE = True
+
 BinaryTypes = [
     "WindowsPlayer",
     "WindowsStudio64",
-    #"MacPlayer",
-    #"MacStudio" TODO: Mac client support
+    "MacPlayer",
+    "MacStudio"
+]
+
+Channels = [
+    "LIVE",
+    #"zcanary",
+    #"zintegration"
 ]
 
 currentClientUrl = ""
@@ -21,7 +29,10 @@ for i in BinaryTypes:
 token = open("/home/red/tokenclientsearch.txt", "r").read()
 Webhook = discord.SyncWebhook.from_url(token)
 
-Webhook.send(f'Started!')
+if DEBUG_MODE:
+    Webhook.send(f'Started (Debug)!')
+else:
+    Webhook.send(f'Started!')
 
 ClientArchiveQueue = []
 Queuelock = threading.Lock()
@@ -31,11 +42,32 @@ def WorkerThread():
         while len(ClientArchiveQueue) > 0:
             with Queuelock:
                 latest = ClientArchiveQueue.pop(0)
-            archiveURLS(latest)
+            if DEBUG_MODE:
+                urlTest(latest)
+            else:
+                archiveURLS(latest)
+
+def urlTest(curVerArgs):
+    pkgManifest, curVersion, versionHashStatic = curVerArgs
+    currentFailedFiles = []
+    for v in pkgManifest:
+        print("-------------STARTING HEAD TEST-------------")
+        currentClientUrl = f"https://setup.rbxcdn.com/{curVersion}-{v}"
+        testpost = requests.head(currentClientUrl)
+        print(currentClientUrl)
+        print(testpost.status_code)
+        print("-------------ENDING HEAD TEST--------------")
+        if testpost.status_code != 200:
+            currentFailedFiles.append(currentClientUrl)
+    FailedArchiveEmbed = discord.Embed(title=f"Done! Failed Archives: {len(currentFailedFiles)}", description = versionHashStatic)
+    for i in currentFailedFiles:
+        FailedArchiveEmbed.add_field(name = "", value = i, inline = False)
+    Webhook.send(embed=FailedArchiveEmbed)
+
 
 def archiveURLS(curVerArgs):
     time.sleep(20)
-    pkgManifest, curVersion = curVerArgs
+    pkgManifest, curVersion, versionHashStatic = curVerArgs
     currentFailedFiles = []
     for v in pkgManifest:
         time.sleep(20)
@@ -57,7 +89,7 @@ def archiveURLS(curVerArgs):
                         currentFailedFiles.append(currentClientUrl)
                         time.sleep(4)
 
-    FailedArchiveEmbed = discord.Embed(title=f"Done! Failed Archives: {len(currentFailedFiles)}", description = curVersion)
+    FailedArchiveEmbed = discord.Embed(title=f"Done! Failed Archives: {len(currentFailedFiles)}", description = versionHashStatic)
     for i in currentFailedFiles:
         FailedArchiveEmbed.add_field(name = "", value = i, inline = False)
     Webhook.send(embed=FailedArchiveEmbed)
@@ -76,7 +108,7 @@ def archiveURLS(curVerArgs):
                 DeployHistoryFailFlag = True
     if not DeployHistoryFailFlag:
         DeployHistoryTxtArchive = discord.Embed(title="Attempted Archive Of https://setup.rbxcdn.com/DeployHistory.txt", description = "Succeeded!")
-        DeployHistoryTxtArchive.set_image(url="https://media.discordapp.com/attachments/976287740771598379/1161764162284830820/rfold.png")
+        DeployHistoryTxtArchive.set_image(url="https://cdn.discordapp.com/attachments/976287740771598379/1161764162284830820/rfold.png")
     Webhook.send(embed=DeployHistoryTxtArchive)
 
 def SaveClientNow(curVersion, v):
@@ -90,56 +122,99 @@ def GetCurrentHash(CurrentBinaryType):
 def GetPkgManifest(curVersion):
     return requests.get(f"https://s3.amazonaws.com/setup.roblox.com/{curVersion}-rbxPkgManifest.txt")
 
+def GetPkgInstallerManifest(curVersion):
+    return requests.get(f"https://s3.amazonaws.com/setup.roblox.com/{curVersion}-rbxInstallerPkgManifest.txt")
+
 x = threading.Thread(target=WorkerThread)
 x.start()
 
-while True:
-    for CurrentBinaryType in BinaryTypes:
-        for i in range(16):
-            try:
-                fetch = GetCurrentHash(CurrentBinaryType)
-                break
-            except Exception as e:
-                print(f"Error: {e}")
-                open("log.txt", "a").write(f"{e}\n")
-                time.sleep(8)
-
-        cachedDeploy = open(f"{CurrentBinaryType}.txt", "r").read()
-        version = fetch.json().get("clientVersionUpload", '')
-
-        if (cachedDeploy != version):
-            NewDeployEmbed = discord.Embed(title="New Roblox Deploy!", description = version)
-            NewDeployEmbed.add_field(name = f'Log Time', value = datetime.now().strftime("%x %X"), inline = False)
-            NewDeployEmbed.add_field(name = f'binaryType', value = CurrentBinaryType, inline = False)
-            NewDeployEmbed.set_image(url="https://media.discordapp.net/attachments/1121901772961763421/1157753486063173713/deploy.gif")
-            Webhook.send(embed = NewDeployEmbed)
-
-            print("NEWDEPLOY!!!")
-            open(f"{CurrentBinaryType}.txt", "w").write(version)
-
+def ChannelArchiveBot(channel):
+    while True:
+        for CurrentBinaryType in BinaryTypes:
             for i in range(16):
                 try:
-                    rbxPkgManifest = GetPkgManifest(version)
+                    fetch = GetCurrentHash(CurrentBinaryType)
                     break
                 except Exception as e:
                     print(f"Error: {e}")
                     open("log.txt", "a").write(f"{e}\n")
                     time.sleep(8)
 
-            fileListEmbed = discord.Embed(title=f"{version} File List:", description = f"From https://setup.rbxcdn.com/{version}-rbxPkgManifest.txt")
-            pkgManifest = []
-            #open("testDoc.txt", "a").write(str(rbxPkgManifest.text))
-            for v in rbxPkgManifest.text.splitlines():
-                if v.find(".") != -1:
-                    pkgManifest.append(v)
-                    fileListEmbed.add_field(name = v, value = f"https://setup.rbxcdn.com/{version}-{v}", inline = False)
-            fileListEmbed.set_image(url="https://media.discordapp.com/attachments/976287740771598379/1105135729744543776/clientsearch_folder2.png")
-            Webhook.send(embed=fileListEmbed)
-            pkgManifest.append("rbxManifest.txt")
-            if CurrentBinaryType == BinaryTypes[1]:
-                pkgManifest.append("RobloxStudioLauncherBeta.exe")
+            cachedDeploy = open(f"{CurrentBinaryType}.txt", "r").read()
+            versionHashStatic = fetch.json().get("clientVersionUpload", '')
+            version = versionHashStatic
+            if channel != "LIVE":
+                version = f"channel/{channel}/"
 
-            with Queuelock:
-                print("LOCK")
-                ClientArchiveQueue.append((pkgManifest, version))
-    time.sleep(600)
+            if CurrentBinaryType.startswith("Mac"):
+                version = version + f"mac/{versionHashStatic}/"
+
+            if (cachedDeploy != versionHashStatic):
+                NewDeployEmbed = discord.Embed(title="New Roblox Deploy!", description = versionHashStatic)
+                NewDeployEmbed.add_field(name = f'Log Time', value = datetime.now().strftime("%x %X"), inline = False)
+                NewDeployEmbed.add_field(name = f'binaryType', value = CurrentBinaryType, inline = False)
+                NewDeployEmbed.set_image(url="https://media.discordapp.net/attachments/1121901772961763421/1157753486063173713/deploy.gif")
+                Webhook.send(embed = NewDeployEmbed)
+
+                print("NEWDEPLOY!!!")
+                open(f"{CurrentBinaryType}.txt", "w").write(versionHashStatic)
+
+                for i in range(16):
+                    try:
+                        rbxPkgManifest = GetPkgManifest(version)
+                        if CurrentBinaryType.find("Mac") == -1:
+                            rbxPkgInstallerManifest = GetPkgInstallerManifest(version)
+                        break
+                    except Exception as e:
+                        print(f"Error: {e}")
+                        open("log.txt", "a").write(f"{e}\n")
+                        time.sleep(8)
+
+                if CurrentBinaryType.find("Mac") == -1:
+                    fileListEmbed = discord.Embed(title=f"{versionHashStatic} File List:", description = f"From https://setup.rbxcdn.com/{version}-rbxPkgManifest.txt")
+                    launcherListEmbed = discord.Embed(title=f"{versionHashStatic} Installer List:", description = f"From https://setup.rbxcdn.com/{version}-rbxInstallerPkgManifest.txt")
+                else:
+                    fileListEmbed = discord.Embed(title=f"{versionHashStatic} File List:", description = f"From https://setup.rbxcdn.com/mac/")
+                pkgManifest = []
+                #open("testDoc.txt", "a").write(str(rbxPkgManifest.text))
+
+                if CurrentBinaryType.find("Mac") == -1:
+                    for v in rbxPkgManifest.text.splitlines():
+                        if v.find(".") != -1:
+                            pkgManifest.append(v)
+                            fileListEmbed.add_field(name = v, value = f"https://setup.rbxcdn.com/{version}-{v}", inline = False)
+
+                    for v in rbxPkgInstallerManifest.text.splitlines():
+                        if v.find(".") != -1:
+                            pkgManifest.append(v)
+                            launcherListEmbed.add_field(name = v, value = f"https://setup.rbxcdn.com/{version}-{v}", inline = False)
+                    pkgManifest.append("rbxManifest.txt")
+                    pkgManifest.append("rbxPkgManifest.txt")
+
+                    if CurrentBinaryType.find("Studio") != -1:
+                        pkgManifest.append("API-Dump.json")
+                        pkgManifest.append("Full-API-Dump.json")
+                else:
+                    if CurrentBinaryType.find("Studio") != -1:
+                        pkgManifest.append("RobloxStudio.dmg")
+                        pkgManifest.append("RobloxStudio.zip")
+                        pkgManifest.append("RobloxStudioApp.zip")
+                    else:
+                        pkgManifest.append("Roblox.dmg")
+                        pkgManifest.append("Roblox.zip")
+                        pkgManifest.append("RobloxPlayer.zip")
+
+
+                fileListEmbed.set_image(url="https://media.discordapp.com/attachments/976287740771598379/1105135729744543776/clientsearch_folder2.png")
+                Webhook.send(embed=fileListEmbed)
+                if CurrentBinaryType == BinaryTypes[1]:
+                    pkgManifest.append("RobloxStudioLauncherBeta.exe")
+
+                with Queuelock:
+                    print("LOCK")
+                    ClientArchiveQueue.append((pkgManifest, version, versionHashStatic))
+        time.sleep(10)
+
+for i in Channels:
+    ChannelThread = threading.Thread(target=ChannelArchiveBot, args=[i])
+    ChannelThread.start()
