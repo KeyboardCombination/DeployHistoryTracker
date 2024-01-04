@@ -126,7 +126,7 @@ def archiveURLS(curVerArgs):
         except Exception as e:
             time.sleep(60)
             if i == 15:
-                DeployHistoryTxtArchive = discord.Embed(title=f"Attempted Archive Of https://setup.rbxcdn.com/{DeployText}, description = "Failed!")
+                DeployHistoryTxtArchive = discord.Embed(title=f"Attempted Archive Of https://setup.rbxcdn.com/{DeployText}", description = "Failed!")
                 DeployHistoryTxtArchive.set_image(url="https://cdn.discordapp.com/attachments/976287740771598379/1161763241454735480/billc.png")
                 DeployHistoryFailFlag = True
     if not DeployHistoryFailFlag:
