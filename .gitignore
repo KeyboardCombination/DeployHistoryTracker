@@ -5,3 +5,9 @@ log.txt
 MacStudio.txt
 MacPlayer.txt
 WindowsStudio64.txt
+__pycache__/helpers.cpython-311.pyc
+__pycache__/archiveUrls.cpython-311.pyc
+__pycache__/urlTest.cpython-311.pyc
+.vscode/settings.json
+__pycache__/imports.cpython-311.pyc
+__pycache__/globalvals.cpython-311.pyc
