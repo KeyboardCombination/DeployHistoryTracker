@@ -51,7 +51,7 @@ def archiveURLS(curVerArgs):
     globalvals.Webhook.send(file=ClientSuccessFileList)
 
     DeployHistoryFailFlag = False
-    if curVersion.startswith("Mac"):
+    if curVersion.startswith("mac"):
         DeployText = "mac/DeployHistory.txt"
     else:
         DeployText = "DeployHistory.txt"

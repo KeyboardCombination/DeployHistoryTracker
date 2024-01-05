@@ -18,6 +18,7 @@ class globalvals():
 
     DEBUG_MODE = True
     DEBUG_CHANNEL = BinaryTypes[3]
+    DEBUG_DISABLE_ARCHIVE = False
 
     token = open("/home/red/tokenclientsearch.txt", "r").read()
     Webhook = discord.SyncWebhook.from_url(token)

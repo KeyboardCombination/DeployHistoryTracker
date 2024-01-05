@@ -34,5 +34,5 @@ def urlTest(curVerArgs):
     globalvals.Webhook.send(embed=fileListEmbed)
     globalvals.Webhook.send(file=ClientFileList)
 
-    if not globalvals.DEBUG_MODE:
+    if not globalvals.DEBUG_DISABLE_ARCHIVE:
         archiveUrls.archiveURLS((currentSuccessFileNames, curVersion, versionHashStatic))
