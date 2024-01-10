@@ -18,7 +18,7 @@ def SaveClientNow(curVersion, v):
     return ArchiveUrl[0]
 
 def GetCurrentHash(CurrentBinaryType):
-    if globalvals.DEBUG_MODE and CurrentBinaryType.startswith("Mac"):
+    if globalvals.DEBUG_MODE:
         return open("DebugHash.txt", "r").read()
     return requests.get(f"https://clientsettings.roblox.com/v2/client-version/{CurrentBinaryType}").json().get("clientVersionUpload", '')
 

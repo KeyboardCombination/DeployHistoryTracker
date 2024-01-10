@@ -64,6 +64,7 @@ def ChannelArchiveBot(channel):
 
             pattern = re.compile("^(version-)&*(?:[0-f]{16})+$")
             if not pattern.match(version):
+                print("That hash ain't right...")
                 continue
 
             if channel != "LIVE":
